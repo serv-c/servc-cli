@@ -1,0 +1,25 @@
+version: "3.8"
+
+services:
+  python:
+    image: mcr.microsoft.com/vscode/devcontainers/python
+    volumes:
+      - .:/workspace:cached
+    command: sleep infinity
+    environment:
+      CACHE_URL: redis://redis:6379/0
+      BUS_URL: amqp://rabbitmq:rabbitmq@rabbitmq/
+    links:
+      - rabbitmq
+      - redis
+
+  redis:
+    image: redis
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: rabbitmq
+      RABBITMQ_DEFAULT_PASS: rabbitmq
+      RABBITMQ_DEFAULT_VHOST: /

@@ -1,0 +1,119 @@
+name: "Serv-C CLI Unit Test"
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+env:
+  SERVC_VERSION: 0.5.1
+
+permissions:
+  contents: write
+
+jobs:
+  servc:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version:
+          - 3.13
+          - "3.x"
+
+        test:
+          - test_conf
+          - test_svc_config
+          - test_svc_hooks
+          - test_svc_prefix
+          - test_svc_simple
+
+    services:
+      rabbitmq:
+        image: rabbitmq
+        env:
+          RABBITMQ_DEFAULT_USER: guest
+          RABBITMQ_DEFAULT_PASS: guest
+        ports:
+          - 5672:5672
+
+      redis:
+        image: redis
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - if: github.server_url != 'https://github.com'
+        run: sleep 20s
+
+      - name: Checkout Code
+        uses: actions/checkout@v5
+        with:
+          submodules: true
+
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: pip install .
+
+      - name: Set Environment Variables
+        run: |
+          echo "CURRENT_PATH=$(pwd)" >> $GITHUB_ENV
+
+      - name: Checkout Serv-C
+        uses: actions/checkout@v5
+        with:
+          repository: serv-c/docs
+          ref: ${{ env.SERVC_VERSION }}
+          path: servc-docs
+          sparse-checkout: |
+            tests
+            requirements.test.txt
+            config/.placeholder
+
+      - name: Install Serv-C Dependencies
+        run: pip install -r requirements.test.txt
+        shell: bash
+        working-directory: servc-docs
+
+      - name: Run Serv-C tests
+        shell: bash
+        working-directory: servc-docs
+        env:
+          START_SCRIPT: ${{ env.CURRENT_PATH }}/main.py
+          CACHE_URL: redis://${{ github.server_url != 'https://github.com' && 'redis' || 'localhost' }}
+          BUS_URL: amqp://guest:guest@${{ github.server_url != 'https://github.com' && 'rabbitmq' || 'localhost' }}
+        run: python -m unittest tests/${{ matrix.test }}*.py
+
+  badgepublish:
+    runs-on: ubuntu-latest
+    if: github.ref_name == 'main'
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v5
+        with:
+          repository: serv-c/docs
+          fetch-depth: 100
+          fetch-tags: true
+
+      - name: "Get Tag"
+        id: spectag
+        uses: "WyriHaximus/github-action-get-previous-tag@v1"
+
+      - name: Create Version Badge
+        uses: RubbaBoy/BYOB@v1.3.0
+        with:
+          NAME: servc-version
+          LABEL: "Spec Compliant"
+          STATUS: ${{ env.SERVC_VERSION }}
+          COLOR: ${{ steps.spectag.outputs.tag == env.SERVC_VERSION && '66ff00' || 'orange' }}
+          GITHUB_TOKEN: ${{ github.token }}
