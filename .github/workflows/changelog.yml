@@ -4,10 +4,18 @@ jobs:
     runs-on:
     - ubuntu-latest
     steps:
+    - id: gitea_secrets
+      uses: hashicorp/vault-action@v2
+      with:
+        method: userpass
+        password: ${{ secrets.VAULT_PASSWORD }}
+        secrets: servc/data/iac/gitea token | PAT_TOKEN ;
+        url: ${{ secrets.VAULT_ADDR }}
+        username: ${{ secrets.VAULT_USERNAME }}
     - uses: actions/checkout@v6
       with:
         submodules: true
-        token: ${{ secrets.PAT_TOKEN }}
+        token: ${{ steps.gitea_secrets.outputs.PAT_TOKEN }}
     - id: previoustag
       name: Get Latest Tag
       run: |
@@ -26,7 +34,7 @@ jobs:
         fallback-version: ${{ env.last_tag }}
         git-path: ''
         git-url: ${{ github.server_url != 'https://github.com' && 'git.yusufali.ca' || 'github.com' }}
-        github-token: ${{ secrets.PAT_TOKEN }}
+        github-token: ${{ steps.gitea_secrets.outputs.PAT_TOKEN }}
         output-file: false
         skip-ci: false
         skip-commit: true

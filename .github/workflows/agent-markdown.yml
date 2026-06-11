@@ -3,13 +3,21 @@ jobs:
     runs-on:
     - ubuntu-latest
     steps:
+    - id: agent_secrets
+      uses: hashicorp/vault-action@v2
+      with:
+        method: userpass
+        password: ${{ secrets.VAULT_PASSWORD }}
+        secrets: servc/data/iac/servc agent-auth-token | AGENT_TOKEN ;
+        url: ${{ secrets.VAULT_ADDR }}
+        username: ${{ secrets.VAULT_USERNAME }}
     - uses: actions/checkout@v6
       with:
         submodules: true
     - name: Send to embeddings
       uses: https://git.yusufali.ca/actions/embed-markdown@main
       with:
-        api_token: ${{ secrets.AGENT_TOKEN }}
+        api_token: ${{ steps.agent_secrets.outputs.AGENT_TOKEN }}
         api_url: ${{ secrets.AGENT_API_URL }}
 name: Send Markdown to VectorDB
 'on':
