@@ -4,7 +4,7 @@ jobs:
     - ubuntu-latest
     steps:
     - id: agent_secrets
-      uses: hashicorp/vault-action@v4
+      uses: hashicorp/vault-action@v2
       with:
         method: userpass
         password: ${{ secrets.VAULT_PASSWORD }}
