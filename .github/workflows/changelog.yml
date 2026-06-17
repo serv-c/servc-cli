@@ -5,7 +5,7 @@ jobs:
     - ubuntu-latest
     steps:
     - id: gitea_secrets
-      uses: hashicorp/vault-action@v2
+      uses: hashicorp/vault-action@v4
       with:
         method: userpass
         password: ${{ secrets.VAULT_PASSWORD }}
