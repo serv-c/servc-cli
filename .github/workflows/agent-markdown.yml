@@ -11,7 +11,7 @@ jobs:
         secrets: servc/data/iac/servc agent-auth-token | AGENT_TOKEN ;
         url: ${{ secrets.VAULT_ADDR }}
         username: ${{ secrets.VAULT_USERNAME }}
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
       with:
         submodules: true
     - name: Send to embeddings
