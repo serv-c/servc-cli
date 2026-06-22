@@ -12,7 +12,7 @@ jobs:
         secrets: servc/data/iac/gitea token | PAT_TOKEN ;
         url: ${{ secrets.VAULT_ADDR }}
         username: ${{ secrets.VAULT_USERNAME }}
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
       with:
         submodules: true
         token: ${{ steps.gitea_secrets.outputs.PAT_TOKEN }}
